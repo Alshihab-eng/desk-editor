@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ديسك التحرير</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+
+  :root {
+    --bg: #111418; --bg2: #181c22; --card: #1e2330; --card2: #242a38;
+    --border: #2c3447; --accent: #4a90d9; --accent2: #6aaaf0;
+    --red: #e05252; --green: #4caf7d; --blue: #4a90d9; --purple: #7c6fd4;
+    --text: #edf0f5; --text2: #8a96aa; --text3: #505d72;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Cairo',sans-serif; min-height:100vh; direction:rtl; }
+
+  header {
+    background:var(--card); border-bottom:1px solid var(--border); padding:1rem 2rem;
+    display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100;
+  }
+  .logo { font-size:1.2rem; font-weight:900; color:var(--accent); }
+  .date-display { font-size:0.85rem; color:var(--text2); background:var(--bg2); padding:0.4rem 0.8rem; border-radius:8px; border:1px solid var(--border); }
+  .btn-tasks {
+    background:var(--accent); color:#0a0e1a; border:none; padding:0.6rem 1.5rem;
+    border-radius:10px; font-family:'Cairo',sans-serif; font-weight:700; font-size:0.9rem; cursor:pointer;
+  }
+  .btn-tasks:hover { background:var(--accent2); }
+
+  main { padding:2rem; max-width:1400px; margin:0 auto; }
+
+  .results-header { margin-bottom:1.5rem; }
+  .results-title { font-size:1.3rem; font-weight:700; }
+  .results-subtitle { font-size:0.85rem; color:var(--text2); margin-top:0.2rem; }
+
+  .stats-bar { display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
+  .stat-pill { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:0.6rem 1.2rem; display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; }
+  .stat-dot { width:8px; height:8px; border-radius:50%; }
+  .stat-dot.blue{background:var(--blue)} .stat-dot.purple{background:var(--purple)} .stat-dot.red{background:var(--red)}
+  .stat-num { font-weight:700; color:var(--text); }
+  .stat-label { color:var(--text2); }
+
+  .tasks-grid { display:flex; flex-direction:column; gap:0.8rem; max-width:860px; margin:0 auto; }
+
+  .task-card {
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:1.2rem 1.5rem; position:relative;
+    display:flex; align-items:flex-start; gap:1.2rem;
+    animation:fadeUp 0.35s ease forwards; opacity:0;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .task-card:hover { background: var(--card2); border-color:#2c3a55; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateX(8px)} to{opacity:1;transform:translateX(0)} }
+  .task-card:nth-child(1){animation-delay:.04s} .task-card:nth-child(2){animation-delay:.08s}
+  .task-card:nth-child(3){animation-delay:.12s} .task-card:nth-child(4){animation-delay:.16s}
+  .task-card:nth-child(5){animation-delay:.20s} .task-card:nth-child(6){animation-delay:.24s}
+  .task-card:nth-child(7){animation-delay:.28s} .task-card:nth-child(8){animation-delay:.32s}
+  .task-card:nth-child(9){animation-delay:.36s}
+
+  .task-card::before { content:''; position:absolute; top:0; right:0; width:3px; height:100%; }
+  .task-card.t-daily::before  { background:var(--border); }
+  .task-card.t-weekly::before { background:var(--accent); }
+  .task-card.t-monthly::before{ background:var(--accent); }
+  .task-card.t-urgent::before { background:var(--red); }
+
+  .task-icon {
+    width:36px; height:36px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:1.1rem; margin-top:3px;
+  }
+  .ic-blue   { background:rgba(74,144,217,0.1); }
+  .ic-purple { background:rgba(74,144,217,0.1); }
+  .ic-green  { background:rgba(76,175,125,0.1); }
+  .ic-gold   { background:rgba(74,144,217,0.1); }
+  .ic-red    { background:rgba(74,144,217,0.15); }
+
+  .task-main { flex:1; min-width:0; }
+
+  .task-top { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem; }
+  .task-badge { font-size:0.67rem; padding:0.18rem 0.5rem; border-radius:4px; font-weight:700; }
+  .b-daily   { background:rgba(255,255,255,0.05); color:var(--text3); }
+  .b-weekly  { background:rgba(74,144,217,0.12);   color:var(--accent); }
+  .b-monthly { background:rgba(74,144,217,0.12);   color:var(--accent); }
+  .b-urgent  { background:rgba(224,82,82,0.18);   color:var(--red); border:1px solid rgba(224,82,82,0.3); }
+
+  .task-title { font-size:0.98rem; font-weight:700; color:var(--text); line-height:1.3; }
+  .task-body  { font-size:0.82rem; color:var(--text2); line-height:1.8; margin-top:0.4rem; }
+  .task-body p { margin-bottom:0.2rem; }
+  .task-body ul { list-style:none; padding:0; }
+  .task-body ul li { padding:0.1rem 0; display:flex; align-items:flex-start; gap:0.5rem; flex-wrap:wrap; }
+  .task-body ul li::before { content:'—'; color:var(--accent); font-size:0.75rem; margin-top:3px; flex-shrink:0; }
+
+  /* INFO ROW — آخر تحديث + زر */
+  .info-row {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:1rem; padding-top:0.8rem; border-top:1px solid var(--border);
+    gap:0.8rem; flex-wrap:wrap;
+  }
+  .last-update { font-size:0.78rem; color:var(--text3); }
+  .last-update span { color:var(--text2); font-weight:600; }
+
+  .btn-done {
+    font-size:0.75rem; font-weight:700; font-family:'Cairo',sans-serif;
+    padding:0.35rem 0.8rem; border-radius:8px; border:none; cursor:pointer;
+    transition:all 0.2s; white-space:nowrap;
+  }
+  .btn-done.ok   { background:rgba(76,175,125,0.12); color:var(--green); border:1px solid rgba(76,175,125,0.25); }
+  .btn-done.ok:hover { background:rgba(76,175,125,0.25); }
+  .btn-done.late { background:rgba(224,82,82,0.12); color:var(--red); border:1px solid rgba(224,82,82,0.3); }
+  .btn-done.late:hover { background:rgba(224,82,82,0.25); }
+
+  /* DAYS COUNTER */
+  .days-tag {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:8px; padding:0.35rem 0.7rem; margin-top:0.6rem;
+    font-size:0.8rem; color:var(--text2);
+  }
+  .days-tag .num { font-size:1rem; font-weight:900; }
+  .days-tag .num.green  { color:var(--green); }
+  .days-tag .num.yellow { color:#f0a050; }
+  .days-tag .num.red    { color:var(--red); }
+  .days-tag.border-red  { border-color:rgba(224,82,82,0.4); background:rgba(224,82,82,0.05); }
+
+  .empty-state { text-align:center; padding:5rem 2rem; color:var(--text3); }
+  .empty-state .icon { font-size:4rem; margin-bottom:1rem; }
+  .empty-state h3 { font-size:1.2rem; color:var(--text2); margin-bottom:0.5rem; }
+
+  /* HERO STATE */
+  .hero-state {
+    min-height: calc(100vh - 70px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 3rem 2rem;
+    background: radial-gradient(ellipse at 50% 40%, rgba(74,144,217,0.08) 0%, transparent 65%);
+  }
+  .hero-date {
+    font-size: 0.85rem; color: var(--text3); margin-bottom: 1.5rem;
+    background: var(--card); border: 1px solid var(--border);
+    padding: 0.4rem 1rem; border-radius: 20px; letter-spacing: 0.5px;
+  }
+  .hero-title {
+    font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 900;
+    color: var(--text); letter-spacing: -2px; line-height: 1;
+    margin-bottom: 0.8rem;
+  }
+  .hero-title span { color: var(--accent); }
+  .hero-sub {
+    font-size: 1rem; color: var(--text2); margin-bottom: 2.5rem; max-width: 400px;
+  }
+  .hero-btn {
+    background: var(--accent); color: #fff; border: none;
+    padding: 0.9rem 2.5rem; border-radius: 14px;
+    font-family: 'Cairo', sans-serif; font-size: 1rem; font-weight: 900;
+    cursor: pointer; transition: all 0.2s; margin-bottom: 3rem;
+    box-shadow: 0 8px 30px rgba(74,144,217,0.25);
+  }
+  .hero-btn:hover { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(74,144,217,0.4); }
+  .hero-stats {
+    display: flex; align-items: center; gap: 2rem;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.2rem 2rem;
+  }
+  .hero-stat { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+  .hs-num { font-size: 1.6rem; font-weight: 900; color: var(--accent); }
+  .hs-label { font-size: 0.78rem; color: var(--text2); }
+  .hero-divider { width: 1px; height: 36px; background: var(--border); }
+
+  /* SUB NOTES */
+  .sub-note {
+    font-size:0.78rem; color:var(--text3); margin-top:0.3rem; margin-right:0.5rem;
+    padding:0.3rem 0.6rem; background:var(--bg2); border-radius:6px;
+    border-right:2px solid var(--border); line-height:1.5;
+  }
+  .task-body ul li strong { color:var(--text); }
+
+  /* SUGGEST BUTTONS */
+  .btn-suggest {
+    font-size:0.72rem; font-weight:700; font-family:'Cairo',sans-serif;
+    padding:0.25rem 0.6rem; border-radius:6px; border:1px solid rgba(232,184,75,0.3);
+    background:rgba(232,184,75,0.1); color:var(--accent); cursor:pointer;
+    transition:all 0.2s; white-space:nowrap; margin-right:0.4rem;
+  }
+  .btn-suggest:hover { background:rgba(232,184,75,0.2); }
+  .btn-suggest:disabled { opacity:0.5; cursor:not-allowed; }
+
+  .suggest-result {
+    margin-top:0.8rem; padding:0.9rem 1rem; background:rgba(232,184,75,0.06);
+    border:1px solid rgba(232,184,75,0.2); border-radius:10px;
+    font-size:0.85rem; color:var(--text); line-height:1.7;
+  }
+  .suggest-result .suggest-label {
+    font-size:0.72rem; color:var(--accent); font-weight:700; margin-bottom:0.4rem; display:block;
+  }
+  .suggest-loading { color:var(--text3); font-size:0.82rem; }
+
+  /* EMPLOYEES & TELEGRAM */
+  .section-divider {
+    margin: 2rem 0 1rem; font-size:0.75rem; font-weight:700; color:var(--text3);
+    text-transform:uppercase; letter-spacing:1px;
+    display:flex; align-items:center; gap:0.8rem; max-width:860px; margin-left:auto; margin-right:auto;
+  }
+  .section-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .employees-panel {
+    max-width:860px; margin:0 auto 1rem;
+    background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden;
+  }
+  .employees-header {
+    padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid var(--border);
+  }
+  .employees-header h3 { font-size:0.95rem; font-weight:700; color:var(--text); }
+  .btn-add-emp {
+    font-size:0.8rem; font-weight:700; font-family:'Cairo',sans-serif;
+    padding:0.4rem 0.9rem; border-radius:8px; border:1px solid var(--border);
+    background:var(--card2); color:var(--text2); cursor:pointer; transition:all 0.2s;
+  }
+  .btn-add-emp:hover { border-color:var(--accent); color:var(--accent); }
+
+  .employees-list { padding:0.5rem 0; }
+  .employee-row {
+    display:flex; align-items:center; gap:1rem; padding:0.6rem 1.5rem;
+    border-bottom:1px solid var(--border); font-size:0.85rem;
+  }
+  .employee-row:last-child { border-bottom:none; }
+  .emp-avatar {
+    width:32px; height:32px; border-radius:50%; background:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.85rem; font-weight:700; color:#fff; flex-shrink:0;
+  }
+  .emp-name { font-weight:600; color:var(--text); flex:1; }
+  .emp-id { font-size:0.75rem; color:var(--text3); }
+  .btn-del-emp {
+    background:none; border:none; color:var(--text3); cursor:pointer; font-size:0.9rem; padding:0.2rem;
+  }
+  .btn-del-emp:hover { color:var(--red); }
+  .no-employees { padding:1.5rem; text-align:center; color:var(--text3); font-size:0.85rem; }
+
+  /* ASSIGN DROPDOWNS */
+  .assign-row {
+    display:flex; align-items:center; gap:0.6rem; margin-top:0.8rem;
+    padding-top:0.8rem; border-top:1px solid var(--border);
+  }
+  .assign-label { font-size:0.78rem; color:var(--text3); flex-shrink:0; }
+  .assign-select {
+    flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:8px;
+    padding:0.4rem 0.6rem; color:var(--text); font-family:'Cairo',sans-serif;
+    font-size:0.82rem; outline:none; cursor:pointer;
+  }
+  .assign-select:focus { border-color:var(--accent); }
+
+  /* SEND ALL BUTTON */
+  .send-bar {
+    max-width:860px; margin:1.5rem auto 0;
+    display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+  }
+  .send-status { font-size:0.82rem; color:var(--text2); }
+  .btn-send-all {
+    background:var(--accent); color:#fff; border:none;
+    padding:0.8rem 2rem; border-radius:12px;
+    font-family:'Cairo',sans-serif; font-size:0.95rem; font-weight:700;
+    cursor:pointer; transition:all 0.2s;
+    box-shadow:0 4px 15px rgba(74,144,217,0.3);
+  }
+  .btn-send-all:hover { background:var(--accent2); transform:translateY(-1px); }
+  .btn-send-all:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  /* BOT REGISTERED USERS */
+  .bot-panel {
+    max-width:860px; margin:0 auto 1rem;
+    background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden;
+  }
+  .bot-panel-header {
+    padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid var(--border); gap:0.8rem; flex-wrap:wrap;
+  }
+  .bot-panel-header h3 { font-size:0.95rem; font-weight:700; color:var(--text); }
+  .bot-panel-sub { font-size:0.78rem; color:var(--text3); margin-top:0.15rem; }
+  .btn-setup-webhook {
+    font-size:0.78rem; font-weight:700; font-family:'Cairo',sans-serif;
+    padding:0.4rem 0.9rem; border-radius:8px; border:1px solid rgba(76,175,125,0.3);
+    background:rgba(76,175,125,0.1); color:var(--green); cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .btn-setup-webhook:hover { background:rgba(76,175,125,0.2); }
+  .btn-setup-webhook:disabled { opacity:0.5; cursor:not-allowed; }
+  .webhook-status { font-size:0.78rem; color:var(--text2); padding:0.6rem 1.5rem; border-bottom:1px solid var(--border); display:none; }
+  .webhook-status.ok   { color:var(--green); }
+  .webhook-status.fail { color:var(--red); }
+  .bot-user-row {
+    display:flex; align-items:center; gap:1rem; padding:0.6rem 1.5rem;
+    border-bottom:1px solid var(--border); font-size:0.85rem;
+  }
+  .bot-user-row:last-child { border-bottom:none; }
+  .bot-avatar {
+    width:32px; height:32px; border-radius:50%; background:var(--green);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.85rem; font-weight:700; color:#fff; flex-shrink:0;
+  }
+  .bot-user-name { font-weight:600; color:var(--text); flex:1; }
+  .bot-user-id { font-size:0.75rem; color:var(--text3); }
+  .btn-add-from-bot {
+    font-size:0.75rem; font-weight:700; font-family:'Cairo',sans-serif;
+    padding:0.3rem 0.7rem; border-radius:7px; border:1px solid rgba(74,144,217,0.3);
+    background:rgba(74,144,217,0.1); color:var(--accent); cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .btn-add-from-bot:hover { background:rgba(74,144,217,0.2); }
+  .btn-add-from-bot.added { background:rgba(76,175,125,0.1); color:var(--green); border-color:rgba(76,175,125,0.3); cursor:default; }
+  .no-bot-users { padding:1.5rem; text-align:center; color:var(--text3); font-size:0.85rem; line-height:1.8; }
+
+  /* ADD EMPLOYEE MODAL */
+  .emp-modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+    z-index:200; align-items:center; justify-content:center; padding:2rem;
+  }
+  .emp-modal-overlay.active { display:flex; }
+  .emp-modal {
+    background:var(--card); border:1px solid var(--border); border-radius:20px;
+    padding:2rem; max-width:420px; width:100%;
+  }
+  .emp-modal h3 { font-size:1rem; font-weight:700; margin-bottom:1.5rem; color:var(--accent); }
+  .emp-modal-field { margin-bottom:1rem; }
+  .emp-modal-field label { display:block; font-size:0.82rem; color:var(--text2); margin-bottom:0.4rem; }
+  .emp-modal-field input {
+    width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px;
+    padding:0.6rem 0.8rem; color:var(--text); font-family:'Cairo',sans-serif; font-size:0.9rem; outline:none;
+  }
+  .emp-modal-field input:focus { border-color:var(--accent); }
+  .emp-modal-hint { font-size:0.75rem; color:var(--text3); margin-top:0.3rem; }
+  .emp-modal-actions { display:flex; gap:0.8rem; margin-top:1.5rem; }
+  .btn-emp-save {
+    flex:1; padding:0.7rem; background:var(--accent); color:#fff; border:none;
+    border-radius:10px; font-family:'Cairo',sans-serif; font-weight:700; cursor:pointer;
+  }
+  .btn-emp-cancel {
+    padding:0.7rem 1.2rem; background:var(--card2); color:var(--text2);
+    border:1px solid var(--border); border-radius:10px; font-family:'Cairo',sans-serif; cursor:pointer;
+  }
+
+  @media(max-width:600px){ main{padding:1rem} header{padding:.8rem 1rem} .tasks-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:1rem">
+    <div class="logo">🔴 ديسك التحرير</div>
+    <div class="date-display" id="header-date"></div>
+  </div>
+  <button class="btn-tasks" onclick="generateTasks()">📋 توزيع مهام اليوم</button>
+</header>
+
+<main>
+  <div id="tasks-area">
+    <div class="hero-state">
+      <div class="hero-date" id="hero-date"></div>
+      <div class="hero-title">ديسك التحرير</div>
+      <div class="hero-sub">ابدأ يومك بتوزيع المهام على الفريق</div>
+      <button class="hero-btn" onclick="generateTasks()">📋 توزيع مهام اليوم</button>
+      <div class="hero-stats">
+        <div class="hero-stat"><span class="hs-num">9</span><span class="hs-label">قسم</span></div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat"><span class="hs-num">2</span><span class="hs-label">تذكير دوري</span></div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat"><span class="hs-num" id="hero-urgent">—</span><span class="hs-label">تنبيه عاجل</span></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // ─── STORAGE KEYS ────────────────────────────────────────
+  const KEY_MEDIA = 'cms_media_updated';
+  const KEY_ADS   = 'cms_ads_updated';
+
+  // ─── HELPERS ─────────────────────────────────────────────
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function formatAr(str) {
+    if (!str) return 'لم يُسجَّل بعد';
+    const [y,m,d] = str.split('-').map(Number);
+    return new Date(y, m-1, d).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
+  }
+
+  function daysSince(str) {
+    if (!str) return null;
+    const [y,m,d] = str.split('-').map(Number);
+    const past  = new Date(y, m-1, d); past.setHours(0,0,0,0);
+    const today = new Date();           today.setHours(0,0,0,0);
+    return Math.round((today - past) / 86400000);
+  }
+
+  function todayLabel() {
+    return new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  }
+
+  // ─── MARK AS DONE ────────────────────────────────────────
+  function markDone(key) {
+    const today = todayStr();
+    localStorage.setItem(key, today);
+    generateTasks(); // أعد الرسم فوراً
+  }
+
+  // ─── CARD HELPERS ────────────────────────────────────────
+  function simpleCard({ type, icon, ic, badge, bc, title, body, items }) {
+    const itemsHtml = items ? '<ul>'+items.map(i=>`<li>${i}</li>`).join('')+'</ul>' : '';
+    const bodyHtml  = body  ? `<p>${body}</p>` : '';
+    return `
+      <div class="task-card t-${type}">
+        <div class="task-icon ic-${ic}">${icon}</div>
+        <div class="task-main">
+          <div class="task-top">
+            <span class="task-badge b-${bc}">${badge}</span>
+          </div>
+          <div class="task-title">${title}</div>
+          <div class="task-body">${bodyHtml}${itemsHtml}</div>
+        </div>
+      </div>`;
+  }
+
+  function periodicCard({ type, icon, ic, badge, bc, title, body, items, storageKey, threshold, label }) {
+    const lastStr  = localStorage.getItem(storageKey);
+    const days     = daysSince(lastStr);       // null أو عدد موجب
+    const isLate   = days !== null && days >= threshold;
+    const isNull   = days === null;
+
+    // حساب الأيام
+    const daysLeft = days !== null ? threshold - days : null; // موجب=متبقي، سالب=تأخر
+    const absDiff  = daysLeft !== null ? Math.abs(daysLeft) : null;
+
+    // لون ونص العداد
+    let numColor = 'green', tagClass = '', daysTagHtml = '';
+    if (isNull) {
+      daysTagHtml = `<div class="days-tag"><span class="num yellow">؟</span><span>لم يُسجَّل تحديث بعد — اضغط الزر عند التحديث</span></div>`;
+    } else if (isLate) {
+      numColor = 'red'; tagClass = 'border-red';
+      daysTagHtml = `<div class="days-tag ${tagClass}"><span class="num ${numColor}">−${absDiff}</span><span>يوم تأخير عن موعد ${label}</span></div>`;
+    } else if (daysLeft <= Math.ceil(threshold * 0.2)) {
+      numColor = 'yellow';
+      daysTagHtml = `<div class="days-tag"><span class="num ${numColor}">${daysLeft}</span><span>يوم متبقي حتى موعد ${label}</span></div>`;
+    } else {
+      daysTagHtml = `<div class="days-tag"><span class="num ${numColor}">${daysLeft}</span><span>يوم متبقي حتى موعد ${label}</span></div>`;
+    }
+
+    const cardType  = (isNull || isLate) ? 'urgent' : type;
+    const badgeText = (isNull || isLate) ? 'عاجل'   : badge;
+    const badgeC    = (isNull || isLate) ? 'urgent'  : bc;
+    const icC       = (isNull || isLate) ? 'red'     : ic;
+
+    const lastUpdateLabel = lastStr
+      ? `آخر تحديث: <span>${formatAr(lastStr)}</span>`
+      : `<span style="color:var(--red)">لم يُسجَّل تحديث بعد</span>`;
+
+    const btnClass = (isNull || isLate) ? 'late' : 'ok';
+    const itemsHtml = items ? '<ul>'+items.map(i=>`<li>${i}</li>`).join('')+'</ul>' : '';
+    const bodyHtml  = body  ? `<p>${body}</p>` : '';
+
+    return `
+      <div class="task-card t-${cardType}">
+        <div class="task-icon ic-${icC}">${icon}</div>
+        <div class="task-main">
+          <div class="task-top">
+            <span class="task-badge b-${badgeC}">${badgeText}</span>
+          </div>
+          <div class="task-title">${title}</div>
+          <div class="task-body">
+            ${bodyHtml}${itemsHtml}
+            ${daysTagHtml}
+          </div>
+          <div class="info-row">
+            <div class="last-update">${lastUpdateLabel}</div>
+            <button class="btn-done ${btnClass}" onclick="markDone('${storageKey}')">✓ تم التحديث اليوم</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ─── GENERATE ────────────────────────────────────────────
+  function generateTasks() {
+    let daily=0, periodic=0, urgent=0;
+    let html = '';
+
+    // 1. أخبار
+    daily++;
+    html += `
+      <div class="task-card t-daily">
+        <div class="task-icon ic-blue">📰</div>
+        <div class="task-main">
+        <div class="task-top"><span class="task-badge b-daily">يومي</span></div>
+        <div class="task-title">قسم الأخبار الدولية والمحلية</div>
+        <div class="task-body">
+          <ul>
+            <li>توزيع مهمة نشرة الأخبار على الموظف المسؤول</li>
+            <li>
+              <span>تكليف موظف بإعداد الموضوع الرئيسي</span>
+              <button class="btn-suggest" onclick="suggestNews(this)">💡 اقترح موضوع</button>
+            </li>
+            <li>توزيع الأخبار العادية على الفريق التحريري</li>
+          </ul>
+          <div class="suggest-result" id="news-suggest" style="display:none"></div>
+        </div>
+        </div>
+      </div>`;
+
+    // 2. مقالات
+    daily++;
+    html += `
+      <div class="task-card t-daily">
+        <div class="task-icon ic-purple">✍️</div>
+        <div class="task-main">
+        <div class="task-top"><span class="task-badge b-daily">يومي</span></div>
+        <div class="task-title">قسم المقالات</div>
+        <div class="task-body">
+          <p>حدد موضوع مقالة الغد وكلّف الكاتب بإعدادها اليوم.</p>
+          <ul>
+            <li>
+              <span>اختيار موضوع مقالة الغد</span>
+              <button class="btn-suggest" onclick="suggestArticle(this)">💡 اقترح فكرة</button>
+            </li>
+            <li>تكليف الكاتب المناسب</li>
+          </ul>
+          <div class="suggest-result" id="article-suggest" style="display:none"></div>
+        </div>
+        </div>
+      </div>`;
+
+    // 3. ميديا الرياضة — دوري
+    periodic++;
+    const mediaDays = daysSince(localStorage.getItem(KEY_MEDIA));
+    if (mediaDays !== null && mediaDays >= 5) urgent++;
+    html += periodicCard({
+      type:'weekly', icon:'🎬', ic:'purple', badge:'أسبوعي', bc:'weekly',
+      title:'ميديا الرياضة',
+      body:'يجب رفع فيديو جديد كل 5 أيام.',
+      items:['تكليف موظف برفع الفيديو الجديد'],
+      storageKey:KEY_MEDIA, threshold:5, label:'رفع الفيديو'
+    });
+
+    // 4. برامج
+    daily++;
+    html += simpleCard({ type:'daily', icon:'📺', ic:'blue', badge:'يومي', bc:'daily',
+      title:'قسم البرامج',
+      body:'تأكد من رفع الحلقة الجديدة من كل برنامج نشط.',
+      items:['مراجعة قائمة البرامج النشطة','التأكد من رفع الحلقة الجديدة لكل برنامج','التنسيق مع السوشال ميديا لرفع الحلقات الجديدة على يوتيوب'] });
+
+    // 5. إعلانات — دوري
+    periodic++;
+    const adsDays = daysSince(localStorage.getItem(KEY_ADS));
+    if (adsDays !== null && adsDays >= 25) urgent++;
+    html += periodicCard({
+      type:'monthly', icon:'📢', ic:'gold', badge:'شهري', bc:'monthly',
+      title:'الإعلان الرئيسي',
+      body:'يجب تغيير الإعلان الرئيسي كل 25 يوم.',
+      items:['تكليف موظف بتجهيز الإعلان الجديد','رفع الإعلان على الموقع'],
+      storageKey:KEY_ADS, threshold:25, label:'تغيير الإعلان'
+    });
+
+    // 6. مباريات
+    daily++;
+    html += simpleCard({ type:'daily', icon:'⚽', ic:'green', badge:'يومي', bc:'daily',
+      title:'قسم المباريات',
+      items:['صباحاً: تكليف موظف بإضافة مباريات اليوم','مساءً: تكليف موظف آخر بتحديث النتائج'] });
+
+    // 7. تقارير
+    daily++;
+    html += simpleCard({ type:'daily', icon:'📊', ic:'purple', badge:'يومي', bc:'daily',
+      title:'قسم التقارير الخاصة',
+      items:['تكليف موظف بإعداد تقرير خاص عن حدث اليوم البارز'] });
+
+    // 8. نشرة
+    daily++;
+    html += simpleCard({ type:'daily', icon:'📡', ic:'blue', badge:'يومي', bc:'daily',
+      title:'نشرة الأخبار',
+      items:['تكليف موظف مسؤول عن رفع نشرة الأخبار اليومية','التنسيق مع السوشال ميديا لرفع النشرة على يوتيوب'] });
+
+    // 9. سوشال ميديا
+    daily++;
+    html += `
+      <div class="task-card t-daily">
+        <div class="task-icon ic-green">📱</div>
+        <div class="task-main">
+        <div class="task-top"><span class="task-badge b-daily">يومي</span></div>
+        <div class="task-title">السوشال ميديا</div>
+        <div class="task-body">
+          <p>وزّع مهام النشر بحيث ينزل منشور كل ساعة طوال اليوم.</p>
+          <ul>
+            <li>
+              <strong>ريلز:</strong> تكليف موظف بريلز اليوم، وتكليف موظف بتجهيز ريلز الغد مسبقاً
+              <div class="sub-note">⏰ اختر وقت النشر بناءً على إحصائيات وقت الذروة في الحساب</div>
+            </li>
+            <li>
+              <strong>كاروسيل (2 على الأقل):</strong> اختر أهم خبرين اليوم
+              <div class="sub-note">🕑 الكاروسيل الأول: الساعة 2 ظهراً &nbsp;|&nbsp; 🕖 الكاروسيل الثاني: الساعة 7 مساءً</div>
+            </li>
+            <li><strong>5 منشورات من موقع الوكالة على الأقل</strong> — أخبار أو مقالات أو حلقات برامج أو غيره</li>
+            <li>منشور كل ساعة بانتظام طوال اليوم</li>
+          </ul>
+        </div>
+      </div>`;
+
+    // NULL check for urgent
+    if (localStorage.getItem(KEY_MEDIA) === null) urgent++;
+    if (localStorage.getItem(KEY_ADS)   === null) urgent++;
+    // Avoid double count
+    urgent = Math.min(urgent, periodic);
+
+    document.getElementById('tasks-area').innerHTML = `
+      <div class="results-header">
+        <div class="results-title">مهام اليوم</div>
+        <div class="results-subtitle">${todayLabel()}</div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-pill"><div class="stat-dot blue"></div><span class="stat-num">${daily}</span><span class="stat-label">مهام يومية</span></div>
+        <div class="stat-pill"><div class="stat-dot purple"></div><span class="stat-num">${periodic}</span><span class="stat-label">أقسام دورية</span></div>
+        ${urgent > 0 ? `<div class="stat-pill"><div class="stat-dot red"></div><span class="stat-num">${urgent}</span><span class="stat-label">تنبيهات عاجلة</span></div>` : ''}
+      </div>
+      <div class="tasks-grid">${html}</div>`;
+  }
+
+  // ─── AI SUGGEST ──────────────────────────────────────────
+  async function callClaude(prompt, useSearch = false) {
+    const res = await fetch('/api/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt, use_search: useSearch })
+    });
+    const data = await res.json();
+    return data.suggestion || 'لم يتم الحصول على اقتراح.';
+  }
+
+  async function suggestNews(btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ جاري البحث...';
+    const box = document.getElementById('news-suggest');
+    box.style.display = 'block';
+    box.innerHTML = '<span class="suggest-loading">يبحث عن أبرز الأخبار الرياضية...</span>';
+    try {
+      const today = new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+      const text = await callClaude(
+        `اليوم هو ${today}. أنت مساعد تحريري لموقع رياضي فلسطيني. استخدم أداة البحث على الإنترنت للبحث عن أبرز الأخبار الرياضية العالمية والعربية التي حدثت اليوم أو أمس. ثم اقترح الخبر الأنسب ليكون الموضوع الرئيسي لليوم على موقع رياضي فلسطيني. اكتب فقط: عنوان مقترح بالعربي، وجملة واحدة تشرح أهميته. لا تضف مقدمة أو تعليق.`,
+        true
+      );
+      box.innerHTML = `<span class="suggest-label">💡 موضوع رئيسي مقترح</span>${text}`;
+    } catch(e) {
+      box.innerHTML = '<span style="color:var(--red)">حدث خطأ، حاول مرة أخرى.</span>';
+    }
+    btn.disabled = false;
+    btn.textContent = '🔄 اقترح مجدداً';
+  }
+
+  async function suggestArticle(btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ جاري التفكير...';
+    const box = document.getElementById('article-suggest');
+    box.style.display = 'block';
+    box.innerHTML = '<span class="suggest-loading">يفكر في فكرة مقالة مناسبة...</span>';
+    try {
+      const today = new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+      const text = await callClaude(
+        `اليوم هو ${today}. أنت مساعد تحريري لموقع رياضي فلسطيني متخصص. اقترح فكرة مقالة واحدة مميزة تناسب الموقع، يمكن أن تكون عن: الرياضة الفلسطينية وآخر أحداثها، أو أهمية الرياضة للصحة، أو قصة ملهمة لرياضي، أو تحليل لحدث رياضي راهن. اكتب فقط: عنوان مقترح، وفكرة المقالة في جملتين. لا تضف مقدمة أو تعليق.`
+      );
+      box.innerHTML = `<span class="suggest-label">✍️ فكرة مقالة مقترحة</span>${text}`;
+    } catch(e) {
+      box.innerHTML = '<span style="color:var(--red)">حدث خطأ، حاول مرة أخرى.</span>';
+    }
+    btn.disabled = false;
+    btn.textContent = '🔄 اقترح مجدداً';
+  }
+
+  // ─── INIT ────────────────────────────────────────────────
+  document.getElementById('header-date').textContent = todayLabel();
+  const heroDate = document.getElementById('hero-date');
+  if (heroDate) heroDate.textContent = todayLabel();
+
+  // حساب التنبيهات العاجلة للـ hero
+  const heroUrgent = document.getElementById('hero-urgent');
+  if (heroUrgent) {
+    let u = 0;
+    const md = daysSince(localStorage.getItem(KEY_MEDIA));
+    const ad = daysSince(localStorage.getItem(KEY_ADS));
+    if (md === null || md >= 5) u++;
+    if (ad === null || ad >= 25) u++;
+    heroUrgent.textContent = u > 0 ? u : '✓';
+    if (u > 0) heroUrgent.style.color = 'var(--red)';
+    else heroUrgent.style.color = 'var(--green)';
+  }
+</script>
+<!-- ADD EMPLOYEE MODAL -->
+<div class="emp-modal-overlay" id="emp-modal">
+  <div class="emp-modal">
+    <h3>👤 إضافة موظف جديد</h3>
+    <div class="emp-modal-field">
+      <label>الاسم</label>
+      <input type="text" id="emp-name-input" placeholder="مثال: أحمد محمد">
+    </div>
+    <div class="emp-modal-field">
+      <label>Telegram ID</label>
+      <input type="text" id="emp-id-input" placeholder="مثال: 123456789">
+      <div class="emp-modal-hint">الموظف يحصل على ID بفتح البوت وكتابة /start</div>
+    </div>
+    <div class="emp-modal-actions">
+      <button class="btn-emp-save" onclick="saveEmployee()">إضافة</button>
+      <button class="btn-emp-cancel" onclick="closeEmpModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── EMPLOYEES ───────────────────────────────────────────
+  const EMP_KEY = 'cms_employees';
+
+  function getEmployees() {
+    try { return JSON.parse(localStorage.getItem(EMP_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function saveEmployees(list) {
+    localStorage.setItem(EMP_KEY, JSON.stringify(list));
+  }
+
+  function openEmpModal() {
+    document.getElementById('emp-name-input').value = '';
+    document.getElementById('emp-id-input').value = '';
+    document.getElementById('emp-modal').classList.add('active');
+  }
+
+  function closeEmpModal() {
+    document.getElementById('emp-modal').classList.remove('active');
+  }
+
+  function saveEmployee() {
+    const name = document.getElementById('emp-name-input').value.trim();
+    const id   = document.getElementById('emp-id-input').value.trim();
+    if (!name || !id) { alert('الرجاء تعبئة الاسم والـ ID'); return; }
+    const list = getEmployees();
+    list.push({ name, id, initials: name.charAt(0) });
+    saveEmployees(list);
+    closeEmpModal();
+    renderEmployeesPanel();
+    refreshAssignSelects();
+  }
+
+  function deleteEmployee(idx) {
+    const list = getEmployees();
+    list.splice(idx, 1);
+    saveEmployees(list);
+    renderEmployeesPanel();
+    refreshAssignSelects();
+  }
+
+  function renderEmployeesPanel() {
+    const panel = document.getElementById('employees-panel');
+    if (!panel) return;
+    const list = getEmployees();
+    if (list.length === 0) {
+      panel.querySelector('.employees-list').innerHTML = '<div class="no-employees">لا يوجد موظفون بعد — اضغط "إضافة موظف"</div>';
+      return;
+    }
+    panel.querySelector('.employees-list').innerHTML = list.map((e, i) => `
+      <div class="employee-row">
+        <div class="emp-avatar">${e.initials}</div>
+        <div class="emp-name">${e.name}</div>
+        <div class="emp-id">ID: ${e.id}</div>
+        <button class="btn-del-emp" onclick="deleteEmployee(${i})">✕</button>
+      </div>`).join('');
+  }
+
+  function getAssignOptions() {
+    const list = getEmployees();
+    const base = '<option value="">— اختر موظف —</option>';
+    return base + list.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  }
+
+  function refreshAssignSelects() {
+    document.querySelectorAll('.assign-select').forEach(sel => {
+      const val = sel.value;
+      sel.innerHTML = getAssignOptions();
+      sel.value = val;
+    });
+  }
+
+  // ─── TELEGRAM SEND ───────────────────────────────────────
+  async function sendTelegram(chatId, text) {
+    const res = await fetch('/api/send-telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, message: text })
+    });
+    const data = await res.json();
+    return data.success;
+  }
+
+  async function sendAllTasks() {
+    const selects = document.querySelectorAll('.assign-select');
+    const tasks = [];
+    selects.forEach(sel => {
+      if (sel.value) {
+        const empName = sel.options[sel.selectedIndex].text;
+        const taskName = sel.dataset.task;
+        tasks.push({ chatId: sel.value, empName, taskName });
+      }
+    });
+
+    if (tasks.length === 0) {
+      alert('لم يتم تعيين أي موظف — اختر موظفاً لكل مهمة أولاً');
+      return;
+    }
+
+    const btn = document.getElementById('btn-send-all');
+    const status = document.getElementById('send-status');
+    btn.disabled = true;
+    btn.textContent = '⏳ جاري الإرسال...';
+
+    const today = new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    let sent = 0, failed = 0;
+
+    // تجميع المهام لكل موظف
+    const byEmployee = {};
+    tasks.forEach(t => {
+      if (!byEmployee[t.chatId]) byEmployee[t.chatId] = { name: t.empName, tasks: [] };
+      byEmployee[t.chatId].tasks.push(t.taskName);
+    });
+
+    for (const [chatId, data] of Object.entries(byEmployee)) {
+      const taskList = data.tasks.map((t, i) => `${i + 1}. ${t}`).join('\n');
+      const msg = `🔴 ديسك التحرير\n📅 ${today}\n\nمرحباً ${data.name}،\nمهامك اليوم:\n\n${taskList}\n\n✅ يرجى التأكيد بالرد على هذه الرسالة.`;
+      const ok = await sendTelegram(chatId, msg);
+      if (ok) sent++; else failed++;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '📨 إرسال المهام للفريق';
+    status.textContent = `✅ أُرسل لـ ${sent} موظف${failed > 0 ? ` | ❌ فشل ${failed}` : ''}`;
+  }
+
+  // ─── INJECT ASSIGN ROWS INTO CARDS ───────────────────────
+  const TASK_DEFS = [
+    { id: 'assign-news',      task: 'تحرير الأخبار الدولية والمحلية' },
+    { id: 'assign-article',   task: 'كتابة مقالة الغد' },
+    { id: 'assign-media',     task: 'رفع فيديو ميديا الرياضة' },
+    { id: 'assign-programs',  task: 'رفع حلقات البرامج الجديدة' },
+    { id: 'assign-ads',       task: 'تجهيز الإعلان الرئيسي الجديد' },
+    { id: 'assign-matches-m', task: 'إضافة مباريات اليوم (صباحاً)' },
+    { id: 'assign-matches-e', task: 'تحديث نتائج المباريات (مساءً)' },
+    { id: 'assign-report',    task: 'إعداد التقرير الخاص' },
+    { id: 'assign-bulletin',  task: 'رفع نشرة الأخبار' },
+    { id: 'assign-social',    task: 'إدارة السوشال ميديا' },
+  ];
+
+  function injectAssignRows() {
+    // نضيف assign row لكل كارد بعد generateTasks
+    const cards = document.querySelectorAll('.task-card');
+    TASK_DEFS.forEach((def, i) => {
+      const card = cards[i];
+      if (!card) return;
+      const existing = card.querySelector('.assign-row');
+      if (existing) existing.remove();
+      const row = document.createElement('div');
+      row.className = 'assign-row';
+      row.innerHTML = `
+        <span class="assign-label">تكليف:</span>
+        <select class="assign-select" data-task="${def.task}" id="${def.id}">
+          ${getAssignOptions()}
+        </select>`;
+      const taskMain = card.querySelector('.task-main') || card;
+      taskMain.appendChild(row);
+    });
+  }
+
+  // override generateTasks to inject rows after render
+  const _origGenerate = generateTasks;
+  generateTasks = function() {
+    _origGenerate();
+    setTimeout(() => {
+      injectAssignRows();
+      renderEmployeesSection();
+    }, 50);
+  };
+
+  function renderEmployeesSection() {
+    let section = document.getElementById('employees-section');
+    if (!section) {
+      section = document.createElement('div');
+      section.id = 'employees-section';
+      document.getElementById('tasks-area').appendChild(section);
+    }
+    const list = getEmployees();
+    const rows = list.length === 0
+      ? '<div class="no-employees">لا يوجد موظفون بعد — اضغط "إضافة موظف" أو استخدم البوت أدناه</div>'
+      : list.map((e, i) => `
+          <div class="employee-row">
+            <div class="emp-avatar">${e.initials}</div>
+            <div class="emp-name">${e.name}</div>
+            <div class="emp-id">ID: ${e.id}</div>
+            <button class="btn-del-emp" onclick="deleteEmployee(${i})">✕</button>
+          </div>`).join('');
+
+    section.innerHTML = `
+      <div class="section-divider">إدارة الفريق</div>
+      <div class="employees-panel" id="employees-panel">
+        <div class="employees-header">
+          <h3>👥 الموظفون (${list.length})</h3>
+          <button class="btn-add-emp" onclick="openEmpModal()">+ إضافة موظف</button>
+        </div>
+        <div class="employees-list">${rows}</div>
+      </div>
+      <div class="section-divider">تسجيل عبر البوت</div>
+      <div class="bot-panel" id="bot-panel">
+        <div class="bot-panel-header">
+          <div>
+            <h3>🤖 مسجّلون عبر تيليغرام</h3>
+            <div class="bot-panel-sub">الموظفون الذين أرسلوا /start للبوت — اضغط لإضافتهم للفريق</div>
+          </div>
+          <button class="btn-setup-webhook" id="btn-webhook" onclick="setupWebhook(this)">🔗 تفعيل البوت</button>
+        </div>
+        <div class="webhook-status" id="webhook-status"></div>
+        <div id="bot-users-list"><div class="no-bot-users">⏳ جاري التحميل...</div></div>
+      </div>
+      <div class="send-bar">
+        <div class="send-status" id="send-status"></div>
+        <button class="btn-send-all" id="btn-send-all" onclick="sendAllTasks()">📨 إرسال المهام للفريق</button>
+      </div>`;
+
+    fetchRegisteredUsers();
+  }
+
+  async function fetchRegisteredUsers() {
+    const container = document.getElementById('bot-users-list');
+    if (!container) return;
+    try {
+      const res = await fetch('/api/registered-users');
+      const data = await res.json();
+      const users = data.users || [];
+      const existing = getEmployees();
+      const existingIds = new Set(existing.map(e => String(e.id)));
+
+      if (users.length === 0) {
+        container.innerHTML = `<div class="no-bot-users">لم يُسجَّل أحد بعد.<br>أرسل الموظف <strong>/start</strong> للبوت ليظهر هنا تلقائياً.</div>`;
+        return;
+      }
+      container.innerHTML = users.map(u => {
+        const alreadyAdded = existingIds.has(String(u.chat_id));
+        return `
+          <div class="bot-user-row">
+            <div class="bot-avatar">${u.name.charAt(0)}</div>
+            <div class="bot-user-name">${u.name}</div>
+            <div class="bot-user-id">ID: ${u.chat_id}</div>
+            <button class="btn-add-from-bot ${alreadyAdded ? 'added' : ''}"
+              onclick="addFromBot(this, '${u.name.replace(/'/g,"\\'")}', '${u.chat_id}')"
+              ${alreadyAdded ? 'disabled' : ''}>
+              ${alreadyAdded ? '✓ مضاف' : '+ إضافة للفريق'}
+            </button>
+          </div>`;
+      }).join('');
+    } catch(e) {
+      container.innerHTML = '<div class="no-bot-users" style="color:var(--red)">تعذّر تحميل البيانات.</div>';
+    }
+  }
+
+  function addFromBot(btn, name, chatId) {
+    const list = getEmployees();
+    const alreadyExists = list.some(e => String(e.id) === String(chatId));
+    if (alreadyExists) return;
+    list.push({ name, id: chatId, initials: name.charAt(0) });
+    saveEmployees(list);
+    btn.textContent = '✓ مضاف';
+    btn.classList.add('added');
+    btn.disabled = true;
+    renderEmployeesPanel();
+    refreshAssignSelects();
+  }
+
+  async function setupWebhook(btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ جاري التفعيل...';
+    const statusEl = document.getElementById('webhook-status');
+    try {
+      const res = await fetch('/api/setup-webhook', { method: 'POST' });
+      const data = await res.json();
+      statusEl.style.display = 'block';
+      if (data.success) {
+        statusEl.className = 'webhook-status ok';
+        statusEl.textContent = `✅ تم تفعيل البوت — الرابط: ${data.webhook_url}`;
+        btn.textContent = '✅ مفعّل';
+      } else {
+        statusEl.className = 'webhook-status fail';
+        statusEl.textContent = `❌ فشل التفعيل: ${data.error || 'خطأ غير معروف'}`;
+        btn.disabled = false;
+        btn.textContent = '🔗 تفعيل البوت';
+      }
+    } catch(e) {
+      statusEl.style.display = 'block';
+      statusEl.className = 'webhook-status fail';
+      statusEl.textContent = '❌ تعذّر الاتصال بالخادم.';
+      btn.disabled = false;
+      btn.textContent = '🔗 تفعيل البوت';
+    }
+  }
+</script>
+</body>
+</html>
